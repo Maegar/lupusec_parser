@@ -55,6 +55,7 @@ def gatherInformation(url, username, password):
 
     tab.start()
     tab.Fetch.enable(handleAuthRequests=True)
+    tab.Security.setIgnoreCertificateErrors(ignore=True)
     tab.Network.enable()
     tab.Page.navigate(url=url, _timeout=5)
     tab.wait(5)
