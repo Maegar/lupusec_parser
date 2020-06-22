@@ -17,7 +17,7 @@ import pychrome
 import base64
 import json
 
-def gatherInformation(url, username, password):
+def gatherInformation(url, username, password, time):
     # create a browser instance
     browser = pychrome.Browser(url="http://127.0.0.1:9222")
 
@@ -73,8 +73,8 @@ def gatherInformation(url, username, password):
     tab.Network.enable()
     tab.Fetch.enable(handleAuthRequests=True)
     tab.Security.setIgnoreCertificateErrors(ignore=True)
-    tab.Page.navigate(url=url, _timeout=5)
-    tab.wait(5)
+    tab.Page.navigate(url=url, _timeout=time)
+    tab.wait(time)
     tab.stop()
     browser.close_tab(tab)
 

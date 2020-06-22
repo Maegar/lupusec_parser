@@ -21,6 +21,13 @@ def get_arguments():
     _add_argument(parser, '-u', '--username', 'Username for Lupusec UI')
     _add_argument(parser, '-p', '--password', 'Password for Lupusec UI')
     _add_argument(parser, '-a', '--address', 'Lupus panel http Lupusec adress')
+
+    parser.add_argument(
+        '-t', '--time',
+        help='time until the recognition stops',
+        type=int,
+        required=False,
+        default=5)
     return parser.parse_args()
 
 def _add_argument(parser, argument, argument_long, help, required=True):
@@ -31,7 +38,7 @@ def _add_argument(parser, argument, argument_long, help, required=True):
 
 def call():
     args = get_arguments()
-    lupusec_parser.gatherInformation(args.address, args.username, args.password)
+    lupusec_parser.gatherInformation(args.address, args.username, args.password, args.time)
   
 
 def main():
