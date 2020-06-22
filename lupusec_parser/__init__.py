@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import pychrome
+import pychrome.exceptions
 import base64
 import json
 
@@ -38,19 +39,25 @@ def gatherInformation(url, username, password, time):
                 data = tab.Network.getRequestPostData(requestId=kwargs.get('requestId'))
                 request['postData'] = data
             
-            requests[url] = {'request': request}
+            requests[url] = {'request': request,
+                             'requestId': kwargs.get('requestId')}
     
     
     # register callback if you want
     def response_receied(**kwargs):
         if kwargs.get('type') == 'XHR':
             url = kwargs.get('response').get('url')
-
-            bodyResp = tab.Network.getResponseBody(requestId=kwargs.get('requestId'))
+            try:
+                bodyResp = tab.Network.getResponseBody(requestId=kwargs.get('requestId'))
+                bodyResp = bodyResp['body'].replace('\n', '').replace('\t', '')
+            except pychrome.exceptions.CallMethodException as cmex:
+                print('Error while reading body for ID %s and URL %s\n\t%s' % (kwargs.get('requestId'), url, cmex))
+                bodyResp = kwargs
+            
             response = {'mime_type': kwargs.get('response').get('mimeType'),
                         'status': kwargs.get('response').get('status'),
                         'status_text': kwargs.get('response').get('statusText'),
-                        'body': bodyResp['body'].replace('\n', '').replace('\t', '')}
+                        'body': bodyResp}
             
             requests[url]['response'] = response
 
