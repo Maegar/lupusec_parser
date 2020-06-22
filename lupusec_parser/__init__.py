@@ -29,17 +29,16 @@ def gatherInformation(url, username, password, time):
     
     # register callback if you want
     def request_will_be_sent(**kwargs):
-        #print(kwargs.get('type'))
+        reqId = kwargs.get('requestId')
         if kwargs.get('type') == 'XHR':
-            url = kwargs.get('request').get('url')
             request = {'method': kwargs.get('request').get('method'),
                        'header_accept': kwargs.get('request').get('headers').get('Accept')}
 
             if kwargs.get('request').get('method') == 'POST':
-                data = tab.Network.getRequestPostData(requestId=kwargs.get('requestId'))
+                data = tab.Network.getRequestPostData(requestId=reqId)
                 request['postData'] = data
             
-            requests[kwargs.get('requestId')] = {'request': request, 'url': url}
+            requests[reqId] = {'request': request, 'url': kwargs.get('request').get('url')}
     
     
     # register callback if you want
@@ -52,8 +51,9 @@ def gatherInformation(url, username, password, time):
             requests[kwargs.get('requestId')]['response'] = response
 
     def loading_finished(**kwargs):
-        if kwargs.get('requestId') in requests:
-            bodyResp = tab.Network.getResponseBody(requestId=kwargs.get('requestId'))
+        reqId = kwargs.get('requestId')
+        if reqId in requests:
+            bodyResp = tab.Network.getResponseBody(requestId=reqId)
             requests[kwargs.get('requestId')]['request']['body'] = bodyResp
 
     tab.Network.requestWillBeSent = request_will_be_sent
