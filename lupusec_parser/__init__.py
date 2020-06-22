@@ -39,31 +39,26 @@ def gatherInformation(url, username, password, time):
                 data = tab.Network.getRequestPostData(requestId=kwargs.get('requestId'))
                 request['postData'] = data
             
-            requests[url] = {'request': request,
-                             'requestId': kwargs.get('requestId')}
+            requests[kwargs.get('requestId')] = {'request': request, 'url': url}
     
     
     # register callback if you want
     def response_receied(**kwargs):
         if kwargs.get('type') == 'XHR':
-            url = kwargs.get('response').get('url')
-            try:
-                bodyResp = tab.Network.getResponseBody(requestId=kwargs.get('requestId'))
-                bodyResp = bodyResp['body'].replace('\n', '').replace('\t', '')
-            except pychrome.exceptions.CallMethodException as cmex:
-                print('Error while reading body for ID %s and URL %s\n\t%s' % (kwargs.get('requestId'), url, cmex))
-                bodyResp = kwargs
-            
             response = {'mime_type': kwargs.get('response').get('mimeType'),
                         'status': kwargs.get('response').get('status'),
-                        'status_text': kwargs.get('response').get('statusText'),
-                        'body': bodyResp}
+                        'status_text': kwargs.get('response').get('statusText')}
             
-            requests[url]['response'] = response
+            requests[kwargs.get('requestId')]['response'] = response
 
+    def loading_finished(**kwargs):
+        if kwargs.get('requestId') in requests:
+            bodyResp = tab.Network.getResponseBody(requestId=kwargs.get('requestId'))
+            requests[kwargs.get('requestId')]['request']['body'] = bodyResp
 
     tab.Network.requestWillBeSent = request_will_be_sent
     tab.Network.responseReceived = response_receied
+    tab.Network.loadingFinished = loading_finished
 
 
     def continue_requests(**kwargs):
@@ -86,6 +81,6 @@ def gatherInformation(url, username, password, time):
     browser.close_tab(tab)
 
     for x, y in requests.items():
-        print('--------------- ' + x + ' ---------------')
+        print('--------------- ' + y['url'] + ' ---------------')
         print(json.dumps(y, indent=4, sort_keys=True))
         print('------------------------------------------\n')
