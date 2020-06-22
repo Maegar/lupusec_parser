@@ -15,7 +15,7 @@
 
 import pychrome
 import base64
-
+import json
 
 def gatherInformation(url, username, password):
     # create a browser instance
@@ -24,19 +24,35 @@ def gatherInformation(url, username, password):
     # create a tab
     tab = browser.new_tab()
 
+    requests = {}
+    
     # register callback if you want
     def request_will_be_sent(**kwargs):
-        if (kwargs.get('type') == 'XHR') & (kwargs.get('request').get('method') == 'POST'):
-            print("---------%s---------" % kwargs.get('response').get('url'))
-            print("Request: %s" % tab.Network.getRequestBody(requestId=kwargs.get('requestId')))
-            print("-------------------------\n")
+        #print(kwargs.get('type'))
+        if kwargs.get('type') == 'XHR':
+            url = kwargs.get('request').get('url')
+            request = {'method': kwargs.get('request').get('method'),
+                       'header_accept': kwargs.get('request').get('headers').get('Accept')}
 
+            if kwargs.get('request').get('method') == 'POST':
+                data = tab.Network.getRequestPostData(requestId=kwargs.get('requestId'))
+                request['postData'] = data
+            
+            requests[url] = {'request': request}
+    
+    
     # register callback if you want
     def response_receied(**kwargs):
         if kwargs.get('type') == 'XHR':
-            print("---------%s---------" % kwargs.get('response').get('url'))
-            print("Response: %s" % tab.Network.getResponseBody(requestId=kwargs.get('requestId')))#.get('url'))
-            print("-------------------------\n")
+            url = kwargs.get('response').get('url')
+
+            bodyResp = tab.Network.getResponseBody(requestId=kwargs.get('requestId'))
+            response = {'mime_type': kwargs.get('response').get('mimeType'),
+                        'status': kwargs.get('response').get('status'),
+                        'status_text': kwargs.get('response').get('statusText'),
+                        'body': bodyResp['body'].replace('\n', '').replace('\t', '')}
+            
+            requests[url]['response'] = response
 
 
     tab.Network.requestWillBeSent = request_will_be_sent
@@ -52,12 +68,17 @@ def gatherInformation(url, username, password):
 
     tab.Fetch.authRequired = do_auth
     tab.Fetch.requestPaused = continue_requests
-
+    
     tab.start()
+    tab.Network.enable()
     tab.Fetch.enable(handleAuthRequests=True)
     tab.Security.setIgnoreCertificateErrors(ignore=True)
-    tab.Network.enable()
     tab.Page.navigate(url=url, _timeout=5)
     tab.wait(5)
     tab.stop()
     browser.close_tab(tab)
+
+    for x, y in requests.items():
+        print('--------------- ' + x + ' ---------------')
+        print(json.dumps(y, indent=4, sort_keys=True))
+        print('------------------------------------------\n')
